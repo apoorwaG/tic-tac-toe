@@ -10,7 +10,7 @@ const Player = (num) => {
 const gameBoard = (() => {
     const grid = [];
     for(let i = 0; i < 3; i++){
-        grid.push(['x', 'o', 'x']);
+        grid.push(['', '', '']);
     }
 
     // finish the logic here
@@ -20,36 +20,54 @@ const gameBoard = (() => {
     const getMark = (row, col) => {
         return grid[row][col];
     }
-    return {grid, insertMark, getMark};
+
+    const resetBoard = () => {
+        for(let row = 0; row < 3; row++){
+            for(let col = 0; col < 3; col++){
+                grid[row][col] = '';
+            }
+        }
+    }
+
+    return {grid, insertMark, getMark, resetBoard};
 
 })();
 
 
-const loadBoard = () => {
-    const grid = document.querySelector(".grid");
-    for(let row = 0; row < 3; row++){
-        for(let col = 0; col < 3; col++){
-            const box = document.createElement("div");
-            box.textContent = gameBoard.getMark(row, col);
-            box.classList.add("box");
-            box.setAttribute('data-row', `${row}`);
-            box.setAttribute('data-col', `${col}`);
-            grid.appendChild(box);
+// display module.
+// all things to update front end display go here
+const displayController = (() => {
+
+    // initial function to load the game board in HTML
+    const loadBoard = () => {
+        const grid = document.querySelector(".grid")
+        for(let row = 0; row < 3; row++){
+            for(let col = 0; col < 3; col++){
+                const box = document.createElement("div");
+                box.textContent = gameBoard.getMark(row, col);
+                box.classList.add("box");
+                box.setAttribute('data-row', `${row}`);
+                box.setAttribute('data-col', `${col}`);
+                box.setAttribute('style', `flex: 0 0 ${100/3}%`);
+                grid.appendChild(box);
+            }
         }
-    }
-}
+    };
+
+    return {loadBoard};
+})();
 
 
 const gameState = (() => {
 
     let player1 = Player(1);
     let player2 = Player(2);
+
+    // initialize the board
+    displayController.loadBoard();
+
     // player 1 goes first
     let turn = 1;
-
-
-    const getTurn = () => turn;
-
     const changeTurn = () => {
         if(turn === 1){
             turn = 2;
@@ -62,12 +80,7 @@ const gameState = (() => {
         }    
     }
 
-    return {changeTurn, getTurn}
+    return {}
 
 })();
-
-console.log(gameState.getTurn());
-gameState.changeTurn();
-
-console.log(gameState.getTurn());
 

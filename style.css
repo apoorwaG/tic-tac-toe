@@ -9,4 +9,16 @@ body {
     height: 300px;
     width: 300px;
     border: 2px solid black;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.box:hover {
+    background-color: rgb(150, 163, 175);
 }
