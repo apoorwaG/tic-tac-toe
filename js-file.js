@@ -1,7 +1,7 @@
 const Player = (num) => {
     // bolster this logic later
     let mark = 'x';
-    if(num === 2)
+    if(num === 1)
         mark = 'o';
 
     return {mark};
@@ -10,7 +10,7 @@ const Player = (num) => {
 const gameBoard = (() => {
     const grid = [];
     for(let i = 0; i < 3; i++){
-        grid.push(['', '', '']);
+        grid.push([' ', ' ', ' ']);
     }
 
     // finish the logic here
@@ -27,7 +27,7 @@ const gameBoard = (() => {
                 grid[row][col] = '';
             }
         }
-    }
+    };
 
     return {grid, insertMark, getMark, resetBoard};
 
@@ -49,38 +49,69 @@ const displayController = (() => {
                 box.setAttribute('data-row', `${row}`);
                 box.setAttribute('data-col', `${col}`);
                 box.setAttribute('style', `flex: 0 0 ${100/3}%`);
+                box.addEventListener('click', function(event) {
+                    gameState.advanceGame(event);
+                });
                 grid.appendChild(box);
             }
         }
     };
 
-    return {loadBoard};
+    // function to fill a box
+    const insertMark = (row, col, player) => {
+        const box = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        box.textContent = player.mark;
+    };
+
+    return {loadBoard, insertMark};
 })();
 
 
+// this module will dictate the flow of the game
 const gameState = (() => {
 
-    let player1 = Player(1);
-    let player2 = Player(2);
+    let players = [Player(0), Player(1)];
 
     // initialize the board
     displayController.loadBoard();
 
+    // displayController.insertMark(0, 0, players[0]);
+
     // player 1 goes first
-    let turn = 1;
+    let turn = 0;
+
+    const getTurn = () => turn;
+    
     const changeTurn = () => {
-        if(turn === 1){
-            turn = 2;
-        }   
-        else if(turn === 2){
+        if(turn === 0){
             turn = 1;
+        }   
+        else if(turn === 1){
+            turn = 0;
         }
         else{
             console.log("Hol'up."); 
         }    
     }
 
-    return {}
+    const advanceGame = (event) => {
+
+        const row = +event.target.getAttribute("data-row");
+        const col = +event.target.getAttribute("data-col");
+
+        // change the gameBoard internally, with the correct player
+        gameBoard.insertMark(row, col, players[getTurn()]);
+
+        // change the visual, with the correct player
+        displayController.insertMark(row, col, players[getTurn()]);
+
+
+        changeTurn();
+        // at the end, disable this box so you can't click on it again
+        event.target.disabled = true;
+    }
+
+    return {changeTurn, getTurn, advanceGame};
 
 })();
 
