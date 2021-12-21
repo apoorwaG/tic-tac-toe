@@ -5,15 +5,17 @@ const Player = (num) => {
         mark = 'o';
 
     return {mark};
-}
+};
 
 // game board object. change/check state of the game board here.
 const gameBoard = (() => {
     const grid = [];
     let slots = 9;
     
-    for(let i = 0; i < 3; i++){
-        grid.push(['', '', '']);
+    const initializeBoard = () => {
+        for(let i = 0; i < 3; i++){
+            grid.push(['', '', '']);
+        }
     }
 
     // finish the logic here
@@ -33,6 +35,8 @@ const gameBoard = (() => {
                 grid[row][col] = '';
             }
         }
+        // reset the number of open slots
+        slots = 9;
     };
 
     const checkStatus = (row, col, player) => {
@@ -98,15 +102,14 @@ const gameBoard = (() => {
 
     const gameOver = (player, winner) => {
         if(winner) {
-            console.log(`${player.getMark()} has won the game!`);
+            console.log(`${player.mark} has won the game!`);
 
         } else {
             console.log("A tie. No one won!");
         }
-        resetBoard();
     }
 
-    return {insertMark, checkStatus, gameOver, getOpenSlots};
+    return {initializeBoard, insertMark, checkStatus, gameOver, getOpenSlots, resetBoard};
 
 })();
 
@@ -124,7 +127,7 @@ const displayController = (() => {
                 box.classList.add("box");
                 box.setAttribute('data-row', `${row}`);
                 box.setAttribute('data-col', `${col}`);
-                box.setAttribute('style', `flex: 0 0 ${100/3}%`);
+                box.setAttribute('style', `height: 100px; width: 100px;`);
                 box.addEventListener('click', function(event) {
                     gameState.advanceGame(event);
                 });
@@ -132,6 +135,22 @@ const displayController = (() => {
             }
         }
     };
+
+    const resetBoard = () => {
+        const boxes = document.querySelectorAll(".box");
+        boxes.forEach(box => {
+            box.textContent = ""
+            box.disabled = false;
+        });
+
+        // if game result has been displayed, remove that too.
+        const result = document.querySelector("div.result");
+        if(result){
+            const resultParent = result.parentElement;
+            resultParent.removeChild(result);
+        }
+
+    }
 
     // function to fill a box
     const insertMark = (row, col, player) => {
@@ -143,9 +162,10 @@ const displayController = (() => {
         const boxes = document.querySelectorAll("button.box");
         boxes.forEach(box => {box.disabled = true});
 
-        const body = document.querySelector("body");
+        const boardBody = document.querySelector("div.board");
         const result = document.createElement("div");
-        
+        result.classList.add("result")
+
         if(winner && player.mark === 'x'){
             result.textContent = "Player 1 has won the game!";
         } else if(winner && player.mark === 'o'){
@@ -153,10 +173,26 @@ const displayController = (() => {
         } else {
             result.textContent = "It's a tie!";
         }
-        body.appendChild(result);
+        boardBody.appendChild(result);
     }
 
-    return {loadBoard, insertMark, gameOver};
+    const putResetButton = () => {
+        const boardBody = document.querySelector("div.board");
+        const resetButton = document.createElement("button");
+        resetButton.classList.add('reset');
+        resetButton.textContent = "New Game";
+        resetButton.style.margin = "20px 0";
+        resetButton.addEventListener('click', function() {
+            // reset the internal gameboard
+            gameBoard.resetBoard();
+            // reset the display board
+            resetBoard();
+        });
+        boardBody.appendChild(resetButton);
+
+    }
+
+    return {loadBoard, insertMark, gameOver, putResetButton};
 })();
 
 
@@ -165,8 +201,12 @@ const gameState = (() => {
 
     let players = [Player(0), Player(1)];
 
-    // initialize the board
+    // initialize the internal game board
+    gameBoard.initializeBoard();
+
+    // initialize the display board
     displayController.loadBoard();
+    displayController.putResetButton();
 
     // player 1 goes first
     let turn = 0;
@@ -186,7 +226,6 @@ const gameState = (() => {
     }
 
     const advanceGame = (event) => {
-
         const row = +event.target.getAttribute("data-row");
         const col = +event.target.getAttribute("data-col");
 
@@ -210,7 +249,6 @@ const gameState = (() => {
         }
 
         changeTurn();
-    
     }
 
     return {advanceGame};
