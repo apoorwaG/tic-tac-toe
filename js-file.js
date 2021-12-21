@@ -7,18 +7,24 @@ const Player = (num) => {
     return {mark};
 }
 
+// game board object. change/check state of the game board here.
 const gameBoard = (() => {
     const grid = [];
+    let slots = 9;
+    
     for(let i = 0; i < 3; i++){
-        grid.push([' ', ' ', ' ']);
+        grid.push(['', '', '']);
     }
 
     // finish the logic here
     const insertMark = (row, col, player) => {
+        slots -= 1;
         grid[row][col] = player.mark;
     }
-    const getMark = (row, col) => {
-        return grid[row][col];
+
+    // get number of open slots
+    const getOpenSlots = () => {
+        return slots;
     }
 
     const resetBoard = () => {
@@ -29,7 +35,78 @@ const gameBoard = (() => {
         }
     };
 
-    return {grid, insertMark, getMark, resetBoard};
+    const checkStatus = (row, col, player) => {
+        if(row === 0){
+            if(col === 0){
+                if(grid[row][0] === grid[row][1] && grid[row][1] === grid[row][2] ||
+                    grid[0][col] === grid[1][col] && grid[1][col] === grid[2][col] ||
+                    grid[0][0] == grid[1][1] && grid[1][1] === grid[2][2]){
+                        return true;
+                }  
+            }
+            else if(col === 1){
+                if(grid[0][col] === grid[1][col] && grid[1][col] === grid[2][col] || 
+                    grid[row][0] === grid[row][1] && grid[row][1] === grid[row][2])
+                    return true;
+            }
+            else if(col === 2){
+                if(grid[0][col] === grid[1][col] && grid[1][col] === grid[2][col] ||
+                    grid[0][2] === grid[1][1] && grid[1][1] === grid[2][0] || 
+                    grid[row][0] === grid[row][1] && grid[row][1] === grid[row][2])
+                        return true;
+            }
+        } else if(row === 1){
+            if(col === 0){
+                if(grid[0][0] === grid[1][0] && grid[1][0] == grid[2][0] ||
+                    grid[1][0] === grid[1][1] && grid[1][1] === grid[1][2])
+                    return true;
+            }
+            else if(col === 1){
+                if(grid[0][0] == grid[1][1] && grid[1][1] === grid[2][2] || 
+                    grid[0][1] === grid[1][1] && grid[1][1] === grid[2][1] || 
+                    grid[0][2] === grid[1][1] && grid[1][1] === grid[2][0] || 
+                    grid[1][0] === grid[1][1] && grid[1][1] === grid[1][2])
+                    return true;
+            } 
+            else if(col === 2){
+                if(grid[0][2] === grid[1][2] && grid[1][2] === grid[2][2] || 
+                    grid[1][0] === grid[1][1] && grid[1][1] === grid[1][2])
+                    return true;
+            }
+        } else if(row === 2){
+            if(col === 0){
+                if(grid[0][col] === grid[1][col] && grid[1][col] === grid[2][col] || 
+                    grid[0][2] === grid[1][1] && grid[1][1] === grid[2][0] || 
+                    grid[row][0] === grid[row][1] && grid[row][1] === grid[row][2]){
+                        return true;
+                    }
+            }
+            else if(col === 1){
+                if(grid[0][1] === grid[1][1] && grid[1][1] === grid[2][1] ||
+                    grid[row][0] === grid[row][1] && grid[row][1] === grid[row][2])
+                    return true;
+            }
+            else if(col === 2){
+                if(grid[0][2] === grid[1][2] && grid[1][2] === grid[2][2] || 
+                    grid[0][0] == grid[1][1] && grid[1][1] === grid[2][2] ||
+                    grid[row][0] === grid[row][1] && grid[row][1] === grid[row][2])
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    const gameOver = (player, winner) => {
+        if(winner) {
+            console.log(`${player.getMark()} has won the game!`);
+
+        } else {
+            console.log("A tie. No one won!");
+        }
+        resetBoard();
+    }
+
+    return {insertMark, checkStatus, gameOver, getOpenSlots};
 
 })();
 
@@ -43,8 +120,7 @@ const displayController = (() => {
         const grid = document.querySelector(".grid")
         for(let row = 0; row < 3; row++){
             for(let col = 0; col < 3; col++){
-                const box = document.createElement("div");
-                box.textContent = gameBoard.getMark(row, col);
+                const box = document.createElement("button");
                 box.classList.add("box");
                 box.setAttribute('data-row', `${row}`);
                 box.setAttribute('data-col', `${col}`);
@@ -63,7 +139,24 @@ const displayController = (() => {
         box.textContent = player.mark;
     };
 
-    return {loadBoard, insertMark};
+    const gameOver = (player, winner) => {
+        const boxes = document.querySelectorAll("button.box");
+        boxes.forEach(box => {box.disabled = true});
+
+        const body = document.querySelector("body");
+        const result = document.createElement("div");
+        
+        if(winner && player.mark === 'x'){
+            result.textContent = "Player 1 has won the game!";
+        } else if(winner && player.mark === 'o'){
+            result.textContent = "Player 2 has won the game!";
+        } else {
+            result.textContent = "It's a tie!";
+        }
+        body.appendChild(result);
+    }
+
+    return {loadBoard, insertMark, gameOver};
 })();
 
 
@@ -75,13 +168,11 @@ const gameState = (() => {
     // initialize the board
     displayController.loadBoard();
 
-    // displayController.insertMark(0, 0, players[0]);
-
     // player 1 goes first
     let turn = 0;
 
     const getTurn = () => turn;
-    
+
     const changeTurn = () => {
         if(turn === 0){
             turn = 1;
@@ -105,13 +196,24 @@ const gameState = (() => {
         // change the visual, with the correct player
         displayController.insertMark(row, col, players[getTurn()]);
 
+        // disable this box so you can't click on it again
+        event.target.disabled = true;
+
+        // check the status of the game. true if someone has won
+        const gameStatus = gameBoard.checkStatus(row, col, players[getTurn()]);
+    
+        // this player has won the game, or game is over
+        if(gameStatus || gameBoard.getOpenSlots() === 0){
+            gameBoard.gameOver(players[getTurn()], gameStatus);
+            displayController.gameOver(players[getTurn()], gameStatus);
+            return;
+        }
 
         changeTurn();
-        // at the end, disable this box so you can't click on it again
-        event.target.disabled = true;
+    
     }
 
-    return {changeTurn, getTurn, advanceGame};
+    return {advanceGame};
 
 })();
 
