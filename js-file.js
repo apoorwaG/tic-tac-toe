@@ -118,8 +118,17 @@ const gameBoard = (() => {
 // all things to update front end display go here
 const displayController = (() => {
 
+    const opponents = document.querySelectorAll(".opponents button");
+    opponents.forEach(choice => {
+        choice.addEventListener('click', function(event) {
+            gameState.setOpponent(event.target.textContent);
+        });
+    });
+
     // initial function to load the game board in HTML
     const loadBoard = () => {
+        const board = document.querySelector(".board");
+        board.style.display = "none";
         const grid = document.querySelector(".grid")
         for(let row = 0; row < 3; row++){
             for(let col = 0; col < 3; col++){
@@ -136,6 +145,12 @@ const displayController = (() => {
         }
     };
 
+    const showBoard = () => {
+        const board = document.querySelector(".board");
+        board.style.display = "flex";
+    }
+
+    // function to reset the display board
     const resetBoard = () => {
         const boxes = document.querySelectorAll(".box");
         boxes.forEach(box => {
@@ -180,26 +195,36 @@ const displayController = (() => {
         const boardBody = document.querySelector("div.board");
         const resetButton = document.createElement("button");
         resetButton.classList.add('reset');
-        resetButton.textContent = "New Game";
+        resetButton.textContent = "Restart";
         resetButton.style.margin = "20px 0";
         resetButton.addEventListener('click', function() {
             // reset the internal gameboard
             gameBoard.resetBoard();
             // reset the display board
             resetBoard();
+            // reset the game state
+            gameState.resetState();
         });
         boardBody.appendChild(resetButton);
 
     }
 
-    return {loadBoard, insertMark, gameOver, putResetButton};
+    return {loadBoard, showBoard, insertMark, gameOver, putResetButton, resetBoard};
 })();
 
+// computer that will play with the user
+const aiBot = (() => {
+
+
+
+})();
 
 // this module will dictate the flow of the game
 const gameState = (() => {
 
     let players = [Player(0), Player(1)];
+    // player 1 goes first
+    let turn = 0;
 
     // initialize the internal game board
     gameBoard.initializeBoard();
@@ -208,8 +233,23 @@ const gameState = (() => {
     displayController.loadBoard();
     displayController.putResetButton();
 
-    // player 1 goes first
-    let turn = 0;
+    // display the board once the player has selected an opponent
+    const setOpponent = (opponent) => {
+        console.log(opponent);
+        if(opponent === "Player"){
+
+        } else if(opponent === "Computer"){
+
+        }
+        resetState();
+        gameBoard.resetBoard();
+        displayController.resetBoard();
+        displayController.showBoard();
+    };
+
+    const resetState = () => {
+        turn = 0;
+    };
 
     const getTurn = () => turn;
 
@@ -251,7 +291,7 @@ const gameState = (() => {
         changeTurn();
     }
 
-    return {advanceGame};
+    return {advanceGame, setOpponent, resetState};
 
 })();
 

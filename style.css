@@ -7,12 +7,25 @@ body {
 
 .header {
     align-self: center;
-    margin: 40px 0;
+    margin-top: 40px;
+    margin-bottom: 20px;
     font-size: 40px;
 }
 
-.board {
+.opponents {
+    align-self: center;
     display: flex;
+    margin-bottom: 20px;
+    column-gap: 10px;
+}
+
+.human, 
+.cpu {
+    border: 2px solid black;
+    padding: 0 5px;
+}
+
+.board {
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -21,7 +34,7 @@ body {
 .grid {
     height: 300px;
     width: 300px;
-    border: 2px solid black;
+    /* border: 2px solid black; */
     display: flex;
     flex-wrap: wrap;
 }
@@ -32,7 +45,3 @@ body {
     justify-content: center;
     font-size: 20px;
 }
-
-/* .box:hover {
-    background-color: rgb(150, 163, 175);
-} */
