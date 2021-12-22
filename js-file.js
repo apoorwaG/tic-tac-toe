@@ -109,7 +109,12 @@ const gameBoard = (() => {
         }
     }
 
-    return {initializeBoard, insertMark, checkStatus, gameOver, getOpenSlots, resetBoard};
+    // function to get the grid. used by aiBot to read the board
+    const getBoard = () => {
+        return grid;
+    }
+
+    return {initializeBoard, getBoard, insertMark, checkStatus, gameOver, getOpenSlots, resetBoard};
 
 })();
 
@@ -127,8 +132,6 @@ const displayController = (() => {
 
     // initial function to load the game board in HTML
     const loadBoard = () => {
-        const board = document.querySelector(".board");
-        board.style.display = "none";
         const grid = document.querySelector(".grid")
         for(let row = 0; row < 3; row++){
             for(let col = 0; col < 3; col++){
@@ -140,14 +143,20 @@ const displayController = (() => {
                 box.addEventListener('click', function(event) {
                     gameState.advanceGame(event);
                 });
+                box.disabled = true;
                 grid.appendChild(box);
             }
         }
+        putResetButton();
     };
 
-    const showBoard = () => {
-        const board = document.querySelector(".board");
-        board.style.display = "flex";
+    // enable boxes for marking once
+    // this is run once opponent has been chosen
+    const enableBoard = () => {
+        const boxes = document.querySelectorAll(".box");
+        boxes.forEach(box => {
+            box.disabled = false;
+        });
     }
 
     // function to reset the display board
@@ -155,7 +164,8 @@ const displayController = (() => {
         const boxes = document.querySelectorAll(".box");
         boxes.forEach(box => {
             box.textContent = ""
-            box.disabled = false;
+            // player must choose opponent once again
+            box.disabled = true;
         });
 
         // if game result has been displayed, remove that too.
@@ -209,46 +219,82 @@ const displayController = (() => {
 
     }
 
-    return {loadBoard, showBoard, insertMark, gameOver, putResetButton, resetBoard};
+    return {loadBoard, enableBoard, insertMark, gameOver, resetBoard};
 })();
 
 // computer that will play with the user
 const aiBot = (() => {
 
+    let grid = gameBoard.getBoard();
 
+    // read internal gameboard, and update it.
+    const readBoard = () => {
+        grid = gameBoard.getBoard();
+    }
+
+    const getAvailableSlot = () => {
+        for(let row = 0; row < 3; row++){
+            for(let col = 0; col < 3; col++){
+                if(!grid[row][col]){
+                    return [row, col];
+                }
+            }
+        }
+    }
+
+    const makeMove = () => {
+        readBoard();
+        let [row, col] = getAvailableSlot();
+        const box = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        const event = {
+            "target": box
+                //{
+                // "getAttribute": function(data) {
+                //     if(data === "data-row"){
+                //         return row;
+                //     } else {
+                //         return col;
+                //     }
+                // }
+            
+        }
+
+        gameState.advanceGame(event);
+    };
+
+    return {makeMove};
 
 })();
 
 // this module will dictate the flow of the game
 const gameState = (() => {
-
     let players = [Player(0), Player(1)];
     // player 1 goes first
     let turn = 0;
 
+    let p2;
+
     // initialize the internal game board
     gameBoard.initializeBoard();
 
-    // initialize the display board
+    // initialize the display board and the reset button
     displayController.loadBoard();
-    displayController.putResetButton();
 
-    // display the board once the player has selected an opponent
+    // enable the board once the player has selected an opponent
     const setOpponent = (opponent) => {
         console.log(opponent);
-        if(opponent === "Player"){
-
-        } else if(opponent === "Computer"){
-
-        }
+        p2 = opponent;
+        // every time an opponent is selected, reset the game state
+        // and enable marking in game board
         resetState();
-        gameBoard.resetBoard();
-        displayController.resetBoard();
-        displayController.showBoard();
+        displayController.enableBoard();
     };
 
+    // reset the game turn, the internal game board and the display board
     const resetState = () => {
         turn = 0;
+        gameBoard.resetBoard();
+        displayController.resetBoard();
     };
 
     const getTurn = () => turn;
@@ -289,6 +335,10 @@ const gameState = (() => {
         }
 
         changeTurn();
+
+        if(p2 === "Computer" && turn === 1){
+            aiBot.makeMove();
+        }
     }
 
     return {advanceGame, setOpponent, resetState};
