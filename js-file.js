@@ -39,6 +39,7 @@ const gameBoard = (() => {
         slots = 9;
     };
 
+    // returns true if game is over (someone won), else return false
     const checkStatus = (row, col, player) => {
         if(row === 0){
             if(col === 0){
@@ -126,9 +127,17 @@ const displayController = (() => {
     const opponents = document.querySelectorAll(".opponents button");
     opponents.forEach(choice => {
         choice.addEventListener('click', function(event) {
+            removeStyling(choice);
+            event.target.classList.add("scaleUp");
             gameState.setOpponent(event.target.textContent);
         });
     });
+
+    const removeStyling = (choice) => {
+        if(choice.classList.contains("scaleUp")){
+            choice.classList.remove("scaleUp");
+        }
+    };
 
     // initial function to load the game board in HTML
     const loadBoard = () => {
@@ -166,6 +175,12 @@ const displayController = (() => {
             box.textContent = ""
             // player must choose opponent once again
             box.disabled = true;
+        });
+
+        // // remove scaled up opponent selection styling
+        const choices = document.querySelectorAll(".opponents button");
+        choices.forEach(choice => {
+            removeStyling(choice)
         });
 
         // if game result has been displayed, remove that too.
@@ -222,41 +237,161 @@ const displayController = (() => {
     return {loadBoard, enableBoard, insertMark, gameOver, resetBoard};
 })();
 
-// computer that will play with the user
+const aiBoard = (board, open) => {
+    
+    // initialize grid that the bot reads 
+    let grid = board;
+    let openSlots = open;
+
+    const getBoard = () => {
+        return grid;
+    }
+
+    const getOpenSlots = () => {
+        return openSlots;
+    };
+
+    const removeMark = (row, col) => {
+        grid[row][col] = "";
+        openSlots++;
+    }
+
+    const insertMark = (row, col, mark) => {
+        grid[row][col] = mark;
+        openSlots--;
+    };
+
+    const isOpen = (row, col) => {
+        if(grid[row][col] === "")
+            return true;
+        return false;
+    }
+
+    const checkWinner = () => {
+
+        let winner = null;
+        // check horizontally
+        for(let i = 0; i < 3; i++){
+            if(grid[i][0] && grid[i][0] === grid[i][1] && grid[i][1] === grid[i][2]){
+                winner = grid[i][0];
+                break;
+            }
+        }
+        if(winner) return winner;
+
+        // check vertically
+        for(let i = 0; i < 3; i++){
+            if(grid[0][i] && grid[0][i] === grid[1][i] && grid[1][i] === grid[2][i]){
+                winner = grid[0][i];
+                break;
+            }
+        }
+        if(winner) return winner;
+
+        // check one diagonal
+        if(grid[0][0] && grid[0][0] === grid[1][1] && grid[1][1] === grid[2][2]){
+            winner = grid[0][0];
+        }
+
+        // check other diagonal
+        if(grid[0][2] && grid[0][2] === grid[1][1] && grid[1][1] === grid[2][0]){
+            winner = grid[0][2];
+        } 
+
+        if(winner) return winner;
+
+        if(getOpenSlots() > 0){
+            return "null";
+        } else {
+            return "tie";
+        }
+
+    };
+
+    return {getOpenSlots, insertMark, removeMark, getBoard, checkWinner, isOpen}
+
+};
+
+// computer bot that will play with the user
 const aiBot = (() => {
 
-    let grid = gameBoard.getBoard();
+    let grid;
 
     // read internal gameboard, and update it.
     const readBoard = () => {
-        grid = gameBoard.getBoard();
+        grid = aiBoard(gameBoard.getBoard(), gameBoard.getOpenSlots());
     }
 
-    const getAvailableSlot = () => {
+    const bestMove = () => {
+        let bestScore = -Infinity;
+        let move;
         for(let row = 0; row < 3; row++){
             for(let col = 0; col < 3; col++){
-                if(!grid[row][col]){
-                    return [row, col];
+                // is the spot available?
+                if(grid.isOpen(row, col)){
+                    grid.insertMark(row, col, 'o');
+                    let score = minimax(grid, 0, false);
+                    grid.removeMark(row, col);
+                    if(score > bestScore){
+                        bestScore = score;
+                        move = [row, col]; 
+                    }
+                        
                 }
             }
+        }
+
+        return move;
+    }
+
+    let scores = {
+        x: -1,
+        o: 1,
+        tie: 0
+    }
+    // o is the maximizing player
+    // x is the minimizing player
+    const minimax = (grid, depth, isMaximizing) => {
+        let result = grid.checkWinner();
+        if(result !== "null"){
+            return scores[result];
+        } 
+
+        if(isMaximizing) {
+            let bestScore = -Infinity;
+            for(let i = 0; i < 3; i++){
+                for(let j = 0; j < 3; j++){        
+                    if (grid.isOpen(i, j)){
+                        grid.insertMark(i, j, 'o');
+                        let score = minimax(grid, depth+1, false)
+                        grid.removeMark(i, j);
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+            }
+            return bestScore;
+        } else {
+            let bestScore = Infinity;
+            for(let i = 0; i < 3; i++){
+                for(let j = 0; j < 3; j++){        
+                    if (grid.isOpen(i, j)){
+                        grid.insertMark(i, j, 'x');
+                        let score = minimax(grid, depth+1, true)
+                        grid.removeMark(i, j);
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+            }
+            return bestScore;
         }
     }
 
     const makeMove = () => {
         readBoard();
-        let [row, col] = getAvailableSlot();
+        let [row, col] = bestMove();
         const box = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
         const event = {
             "target": box
-                //{
-                // "getAttribute": function(data) {
-                //     if(data === "data-row"){
-                //         return row;
-                //     } else {
-                //         return col;
-                //     }
-                // }
-            
         }
 
         gameState.advanceGame(event);
