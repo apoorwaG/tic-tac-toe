@@ -127,9 +127,8 @@ const displayController = (() => {
     const opponents = document.querySelectorAll(".opponents button");
     opponents.forEach(choice => {
         choice.addEventListener('click', function(event) {
-            removeStyling(choice);
-            event.target.classList.add("scaleUp");
             gameState.setOpponent(event.target.textContent);
+            event.target.classList.add("scaleUp");
         });
     });
 
@@ -180,7 +179,8 @@ const displayController = (() => {
         // // remove scaled up opponent selection styling
         const choices = document.querySelectorAll(".opponents button");
         choices.forEach(choice => {
-            removeStyling(choice)
+            if(choice.classList.contains("scaleUp"))
+                removeStyling(choice);
         });
 
         // if game result has been displayed, remove that too.

@@ -17,7 +17,7 @@ body {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
-    column-gap: 10px;
+    column-gap: 20px;
 }
 
 .human, 
@@ -49,6 +49,7 @@ body {
 }
 
 button.scaleUp {
-    /* transform: scale(1.1); */
+    transform: scale(1.3);
     color:green;
+    font-weight: bold;
 }
